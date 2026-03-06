@@ -570,7 +570,7 @@
     <div class="onb-steps">
       <div class="onb-step">
         <div class="step-num">1</div>
-        <div class="step-text">Go to <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank">GitHub → Settings → Tokens</a> and create a new token.</div>
+        <div class="step-text">Go to <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank" rel="noopener noreferrer">GitHub → Settings → Tokens</a> and create a new token.</div>
       </div>
       <div class="onb-step">
         <div class="step-num">2</div>
@@ -578,7 +578,7 @@
       </div>
       <div class="onb-step">
         <div class="step-num">3</div>
-        <div class="step-text">Paste your token below and tap <strong>Get Started</strong>.</div>
+        <div class="step-text">Paste your token below and tap <strong>Get Started</strong>. Tokens are kept only for this browser session.</div>
       </div>
     </div>
     <div class="token-field-wrap">
@@ -809,17 +809,36 @@
 <script>
 // ── Config ──────────────────────────────────────────────────────────────────
 const DEFAULTS = { owner:'ArijitMitra1999', repo:'photos-app', branch:'main', path:'media' };
+const TOKEN_KEY = 'gh_token_session';
 function cfg() {
   return {
     owner:  ls('gh_owner')  || DEFAULTS.owner,
     repo:   ls('gh_repo')   || DEFAULTS.repo,
     branch: ls('gh_branch') || DEFAULTS.branch,
     path:   ls('gh_path')   || DEFAULTS.path,
-    token:  ls('gh_token')  || '',
+    token:  getToken(),
   };
 }
-function saveCfg(c) { ['owner','repo','branch','path','token'].forEach(k => localStorage.setItem('gh_'+k, c[k])); }
+function saveCfg(c) {
+  ['owner','repo','branch','path'].forEach(k => localStorage.setItem('gh_'+k, c[k]));
+  setToken(c.token || '');
+}
 function ls(k) { return localStorage.getItem(k) || ''; }
+function getToken() {
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  if (token) return token;
+  const legacy = ls('gh_token');
+  if (legacy) {
+    sessionStorage.setItem(TOKEN_KEY, legacy);
+    localStorage.removeItem('gh_token');
+    return legacy;
+  }
+  return '';
+}
+function setToken(token) {
+  if (token) sessionStorage.setItem(TOKEN_KEY, token);
+  else sessionStorage.removeItem(TOKEN_KEY);
+}
 
 // ── Sanitize (prevent XSS from API-returned filenames) ───────────────────────
 function esc(str) {
@@ -1241,6 +1260,7 @@ document.getElementById('s-save').addEventListener('click', ()=>{
 document.getElementById('s-signout').addEventListener('click', ()=>{
   if(!confirm('Sign out? Your token will be removed.')) return;
   ['gh_token','gh_owner','gh_repo','gh_branch','gh_path'].forEach(k=>localStorage.removeItem(k));
+  sessionStorage.removeItem(TOKEN_KEY);
   location.reload();
 });
 
@@ -1251,7 +1271,7 @@ document.getElementById('refresh-btn').addEventListener('click', ()=>{ loadGalle
 document.getElementById('onb-start').addEventListener('click', ()=>{
   const v=document.getElementById('onb-token').value.trim();
   if(!v) { toast('Paste your GitHub token first'); return; }
-  localStorage.setItem('gh_token', v);
+  setToken(v);
   initApp();
 });
 document.getElementById('onb-token').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('onb-start').click(); });
