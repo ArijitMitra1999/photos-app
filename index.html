@@ -878,7 +878,7 @@ async function ghAPI(method, endpoint, body) {
 async function listMedia() {
   const c=cfg();
   try {
-    const d = await ghAPI('GET', `/repos/${c.owner}/${c.repo}/contents/${c.path}`);
+    const d = await ghAPI('GET', `/repos/${c.owner}/${c.repo}/contents/${c.path}?_t=${Date.now()}`);
     return Array.isArray(d) ? d : [];
   } catch(e) { if(e.message.includes('404')) return []; throw e; }
 }
@@ -1129,6 +1129,9 @@ async function handleUpload(files) {
   const bannerBar=document.getElementById('upload-banner-bar');
   const bannerCount=document.getElementById('upload-banner-count');
   banner.classList.add('show');
+  document.getElementById('upload-banner-label').textContent = 'Uploading…';
+  bannerBar.style.width = '0%';
+  bannerCount.textContent = '';
 
   const items = Array.from(files).map(f => {
     const mb=f.size/1024/1024;
@@ -1177,7 +1180,7 @@ async function handleUpload(files) {
   document.getElementById('upload-banner-label').textContent='Upload complete';
   toast('Import complete');
   setTimeout(()=>{ banner.classList.remove('show'); bannerBar.style.width='0%'; }, 2500);
-  loadGallery();
+  setTimeout(() => loadGallery(), 1000);
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
