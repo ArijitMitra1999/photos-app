@@ -833,6 +833,25 @@ const ext  = n => (n.split('.').pop()||'').toLowerCase();
 const isImg = n => IMG_EXT.includes(ext(n));
 const isVid = n => VID_EXT.includes(ext(n));
 const rawUrl = name => { const c=cfg(); return `https://raw.githubusercontent.com/${c.owner}/${c.repo}/${c.branch}/${c.path}/${encodeURIComponent(name)}`; };
+
+// Authenticated media fetch — works for both public and private repos.
+// Falls back to a direct src on public repos to avoid unnecessary blob overhead.
+const _blobCache = {};
+async function getMediaUrl(name) {
+  if (_blobCache[name]) return _blobCache[name];
+  const { token } = cfg();
+  const url = rawUrl(name);
+  const res = await fetch(url, { headers: token ? { Authorization: `token ${token}` } : {} });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const blob = await res.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  _blobCache[name] = blobUrl;
+  return blobUrl;
+}
+function clearBlobCache() {
+  Object.values(_blobCache).forEach(u => URL.revokeObjectURL(u));
+  Object.keys(_blobCache).forEach(k => delete _blobCache[k]);
+}
 const fmtSize = b => b<1048576 ? (b/1024).toFixed(0)+' KB' : (b/1048576).toFixed(1)+' MB';
 
 let toastTimer;
@@ -894,6 +913,7 @@ let allFiles=[], activeFilter='all', lbIdx=0, selectMode=false, selectedSet=new 
 
 // ── Load Gallery ─────────────────────────────────────────────────────────────
 async function loadGallery() {
+  clearBlobCache();
   showSkeleton(12);
   try {
     allFiles = await listMedia();
@@ -934,19 +954,19 @@ function renderGrid(files) {
 
 function createThumb(file, i) {
   const item = document.createElement('div');
-  item.className = 'photo-item';
+  item.className = 'photo-item shimmer';
   item.dataset.idx = i;
-  const url = rawUrl(file.name);
   if(isImg(file.name)) {
     const img = document.createElement('img');
-    img.className='loading'; img.loading='lazy'; img.alt=file.name;
-    img.onload=()=>{ img.classList.remove('loading'); img.classList.add('loaded'); };
-    img.onerror=()=>{ img.style.opacity='0.2'; };
-    img.src=url;
+    img.className='loading'; img.alt=file.name;
+    img.onload=()=>{ img.classList.remove('loading'); img.classList.add('loaded'); item.classList.remove('shimmer'); };
+    img.onerror=()=>{ img.style.opacity='0.2'; item.classList.remove('shimmer'); };
+    getMediaUrl(file.name).then(u=>{ img.src=u; }).catch(()=>{ item.classList.remove('shimmer'); });
     item.appendChild(img);
   } else {
     const vid = document.createElement('video');
-    vid.src=url; vid.preload='metadata'; vid.muted=true; vid.playsInline=true;
+    vid.preload='metadata'; vid.muted=true; vid.playsInline=true;
+    getMediaUrl(file.name).then(u=>{ vid.src=u; item.classList.remove('shimmer'); }).catch(()=>item.classList.remove('shimmer'));
     item.appendChild(vid);
     const badge=document.createElement('div'); badge.className='vid-badge';
     badge.innerHTML=`<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Video`;
@@ -1019,22 +1039,25 @@ function openLB(idx, files) {
   showLBItem();
   document.body.style.overflow='hidden';
 }
-function showLBItem() {
+async function showLBItem() {
   const file=lbFiles[lbIdx];
   if(!file) return;
-  const url=rawUrl(file.name);
-  const img=document.getElementById('lb-img'), vid=document.getElementById('lb-vid');
-  if(isImg(file.name)) {
-    vid.style.display='none'; vid.src=''; vid.pause&&vid.pause();
-    img.style.display='block'; img.src=url;
-  } else {
-    img.style.display='none'; img.src='';
-    vid.style.display='block'; vid.src=url; vid.load();
-  }
   document.getElementById('lb-filename').textContent=file.name;
   document.getElementById('lb-counter').textContent=`${lbIdx+1} of ${lbFiles.length}`;
   document.getElementById('lb-prev').disabled=lbIdx===0;
   document.getElementById('lb-next').disabled=lbIdx===lbFiles.length-1;
+  const img=document.getElementById('lb-img'), vid=document.getElementById('lb-vid');
+  // Clear previous
+  vid.style.display='none'; vid.pause&&vid.pause(); vid.src='';
+  img.style.display='none'; img.src='';
+  try {
+    const url = await getMediaUrl(file.name);
+    if(isImg(file.name)) {
+      img.style.display='block'; img.src=url;
+    } else {
+      vid.style.display='block'; vid.src=url; vid.load();
+    }
+  } catch(e) { toast('Could not load media'); }
 }
 function closeLB() {
   const lb=document.getElementById('lightbox');
