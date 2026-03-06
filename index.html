@@ -835,18 +835,44 @@ const isVid = n => VID_EXT.includes(ext(n));
 const rawUrl = name => { const c=cfg(); return `https://raw.githubusercontent.com/${c.owner}/${c.repo}/${c.branch}/${c.path}/${encodeURIComponent(name)}`; };
 
 // Authenticated media fetch — works for both public and private repos.
-// Falls back to a direct src on public repos to avoid unnecessary blob overhead.
+// Tries without auth first (public repos), then falls back to auth header.
 const _blobCache = {};
 async function getMediaUrl(name) {
   if (_blobCache[name]) return _blobCache[name];
   const { token } = cfg();
   const url = rawUrl(name);
-  const res = await fetch(url, { headers: token ? { Authorization: `token ${token}` } : {} });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const blob = await res.blob();
-  const blobUrl = URL.createObjectURL(blob);
-  _blobCache[name] = blobUrl;
-  return blobUrl;
+
+  // Try fetching without auth first (works for public repos)
+  try {
+    const res = await fetch(url);
+    if (res.ok) {
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      _blobCache[name] = blobUrl;
+      return blobUrl;
+    }
+    console.error('Public fetch returned HTTP ' + res.status);
+  } catch (e) {
+    console.error('Public fetch failed, trying with auth:', e.message);
+  }
+
+  // Fallback: try with auth header (for private repos)
+  if (token) {
+    try {
+      const res = await fetch(url, { headers: { Authorization: `token ${token}` } });
+      if (res.ok) {
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        _blobCache[name] = blobUrl;
+        return blobUrl;
+      }
+      console.error('Authenticated fetch returned HTTP ' + res.status);
+    } catch (e) {
+      console.error('Authenticated fetch failed:', e.message);
+    }
+  }
+
+  throw new Error('Failed to load media: ' + name);
 }
 function clearBlobCache() {
   Object.values(_blobCache).forEach(u => URL.revokeObjectURL(u));
