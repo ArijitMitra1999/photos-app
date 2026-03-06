@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photos App</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface2: #242424;
+      --border: #2e2e2e;
+      --accent: #7c6aff;
+      --accent-hover: #9b8dff;
+      --text: #f0f0f0;
+      --text-muted: #888;
+      --red: #ff5555;
+      --green: #50fa7b;
+      --radius: 12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo h1 { font-size: 1.2rem; font-weight: 700; }
+    .header-actions { display: flex; gap: 10px; }
+
+    /* Buttons */
+    button { cursor: pointer; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: var(--accent); color: #fff; padding: 8px 16px; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-ghost { background: transparent; color: var(--text-muted); padding: 8px 12px; border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: #555; }
+    .btn-danger { background: rgba(255,85,85,0.15); color: var(--red); padding: 5px 9px; font-size: 0.78rem; border-radius: 6px; }
+    .btn-danger:hover { background: rgba(255,85,85,0.3); }
+
+    /* Token Banner */
+    #token-banner {
+      background: rgba(124,106,255,0.1);
+      border: 1px solid rgba(124,106,255,0.35);
+      border-radius: var(--radius);
+      padding: 18px 24px;
+      margin: 20px 24px 0;
+      display: none;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    #token-banner.show { display: flex; }
+    #token-banner .desc { flex: 1; font-size: 0.88rem; color: var(--text-muted); }
+    #token-banner strong { color: var(--text); display: block; margin-bottom: 2px; }
+    #token-row { display: flex; gap: 8px; }
+    #token-input {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); padding: 8px 12px; font-size: 0.875rem; width: 260px;
+    }
+    #token-input:focus { outline: none; border-color: var(--accent); }
+
+    /* Upload */
+    #upload-section { padding: 20px 24px 0; }
+    #drop-zone {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 36px; text-align: center; cursor: pointer;
+      transition: all 0.2s; background: var(--surface);
+    }
+    #drop-zone:hover, #drop-zone.drag-over { border-color: var(--accent); background: rgba(124,106,255,0.06); }
+    #drop-zone .icon { font-size: 2.5rem; margin-bottom: 8px; }
+    #drop-zone p { color: var(--text-muted); font-size: 0.88rem; margin-top: 4px; }
+    #drop-zone strong { color: var(--text); }
+    #file-input { display: none; }
+
+    #upload-progress { margin-top: 14px; display: none; flex-direction: column; gap: 8px; }
+    .prog-item {
+      background: var(--surface2); border-radius: 8px; padding: 10px 14px;
+      display: flex; align-items: center; gap: 12px; font-size: 0.83rem;
+    }
+    .prog-item .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .prog-bar-wrap { width: 90px; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .prog-bar { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.3s; }
+    .ok { color: var(--green); } .err { color: var(--red); }
+
+    /* Gallery */
+    #gallery-section { padding: 20px 24px 48px; }
+    .sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+    .sec-header h2 { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); min-width: 80px; }
+    .filters { display: flex; gap: 6px; }
+    .tab { padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-muted); }
+    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    #search-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 7px 12px; font-size: 0.875rem; width: 190px; }
+    #search-box:focus { outline: none; border-color: var(--accent); }
+
+    #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+    .card { background: var(--surface); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); cursor: pointer; transition: transform 0.15s, border-color 0.15s; position: relative; }
+    .card:hover { transform: translateY(-2px); border-color: #444; }
+    .card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--surface2); }
+    .card video { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #000; }
+    .play-overlay { position: absolute; top: 0; left: 0; right: 0; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+    .play-circle { width: 42px; height: 42px; background: rgba(0,0,0,0.6); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .card-footer { padding: 9px 11px; display: flex; align-items: center; justify-content: space-between; }
+    .card-name { font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 6px; }
+
+    #empty { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 0.9rem; }
+    #gallery-loader { text-align: center; padding: 40px; display: none; color: var(--text-muted); font-size: 0.9rem; }
+    #gallery-loader.show { display: block; }
+    .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Lightbox */
+    #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.93); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
+    #lightbox.open { display: flex; }
+    #lb-close { position: fixed; top: 18px; right: 22px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 8px; cursor: pointer; z-index: 1001; font-size: 1rem; }
+    #lb-close:hover { background: var(--border); }
+    #lb-inner { display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: 90vw; }
+    #lb-media img, #lb-media video { max-width: 85vw; max-height: 80vh; border-radius: var(--radius); object-fit: contain; box-shadow: 0 25px 80px rgba(0,0,0,0.6); }
+    #lb-media video { background: #000; }
+    #lb-caption { font-size: 0.83rem; color: var(--text-muted); }
+    #lb-nav { display: flex; gap: 8px; }
+    #lb-nav button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 16px; border-radius: 8px; }
+    #lb-nav button:hover { background: var(--border); }
+    #lb-nav button:disabled { opacity: 0.3; cursor: default; }
+
+    /* Settings Modal */
+    #settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 500; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    #settings-modal.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 420px; max-width: 92vw; }
+    .modal h2 { font-size: 1.05rem; margin-bottom: 4px; }
+    .modal .sub { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 20px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 5px; }
+    .field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 9px 12px; font-size: 0.875rem; }
+    .field input:focus { outline: none; border-color: var(--accent); }
+    .hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; }
+    .hint a { color: var(--accent); text-decoration: none; }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+    /* Toast */
+    #toast { position: fixed; bottom: 22px; right: 22px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 16px; font-size: 0.85rem; z-index: 2000; opacity: 0; transform: translateY(8px); transition: all 0.22s; max-width: 300px; }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.success { border-left: 3px solid var(--green); }
+    #toast.error { border-left: 3px solid var(--red); }
+
+    @media (max-width: 580px) {
+      #gallery { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); }
+      #drop-zone { padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span style="font-size:1.5rem">🖼️</span>
+    <h1>Photos App</h1>
+  </div>
+  <div class="header-actions">
+    <button class="btn-ghost" id="refresh-btn">↻ Refresh</button>
+    <button class="btn-ghost" id="settings-btn">⚙ Settings</button>
+  </div>
+</header>
+
+<!-- Token Banner -->
+<div id="token-banner" class="show">
+  <div class="desc">
+    <strong>GitHub token required</strong>
+    Enter a Personal Access Token with <code>repo</code> scope to upload &amp; manage media.
+  </div>
+  <div id="token-row">
+    <input id="token-input" type="password" placeholder="ghp_xxxxxxxxxxxx" />
+    <button class="btn-primary" id="save-token-btn">Save</button>
+  </div>
+</div>
+
+<!-- Upload -->
+<div id="upload-section">
+  <div id="drop-zone">
+    <input type="file" id="file-input" multiple accept="image/*,video/*" />
+    <div class="icon">📤</div>
+    <p><strong>Click to upload</strong> or drag &amp; drop</p>
+    <p>Photos &amp; Videos · max ~25 MB per file</p>
+  </div>
+  <div id="upload-progress"></div>
+</div>
+
+<!-- Gallery -->
+<div id="gallery-section">
+  <div class="sec-header">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <h2 id="gallery-count">Media</h2>
+      <div class="filters">
+        <button class="tab active" data-filter="all">All</button>
+        <button class="tab" data-filter="image">Photos</button>
+        <button class="tab" data-filter="video">Videos</button>
+      </div>
+    </div>
+    <input id="search-box" type="search" placeholder="Search…" />
+  </div>
+  <div id="gallery-loader"><span class="spinner"></span> Loading…</div>
+  <div id="gallery"></div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox">
+  <button id="lb-close">✕</button>
+  <div id="lb-inner">
+    <div id="lb-media"></div>
+    <div id="lb-caption"></div>
+    <div id="lb-nav">
+      <button id="lb-prev">← Prev</button>
+      <button id="lb-next">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal">
+  <div class="modal">
+    <h2>Settings</h2>
+    <p class="sub">Configure your GitHub repository connection.</p>
+    <div class="field">
+      <label>GitHub Personal Access Token</label>
+      <input type="password" id="s-token" placeholder="ghp_xxxxxxxxxxxx" />
+      <div class="hint">Create one at <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank">GitHub → Settings → Tokens</a> with <code>repo</code> scope.</div>
+    </div>
+    <div class="field">
+      <label>Repository Owner</label>
+      <input type="text" id="s-owner" />
+    </div>
+    <div class="field">
+      <label>Repository Name</label>
+      <input type="text" id="s-repo" />
+    </div>
+    <div class="field">
+      <label>Branch</label>
+      <input type="text" id="s-branch" />
+    </div>
+    <div class="field">
+      <label>Media Folder (in repo)</label>
+      <input type="text" id="s-path" />
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="s-cancel">Cancel</button>
+      <button class="btn-primary" id="s-save">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── Config ───────────────────────────────────────────────────────────────────
+  const DEFAULTS = { owner: 'ArijitMitra1999', repo: 'photos-app', branch: 'main', path: 'media' };
+
+  function cfg() {
+    return {
+      owner:  localStorage.getItem('gh_owner')  || DEFAULTS.owner,
+      repo:   localStorage.getItem('gh_repo')   || DEFAULTS.repo,
+      branch: localStorage.getItem('gh_branch') || DEFAULTS.branch,
+      path:   localStorage.getItem('gh_path')   || DEFAULTS.path,
+      token:  localStorage.getItem('gh_token')  || '',
+    };
+  }
+  function saveCfg(c) {
+    ['owner','repo','branch','path','token'].forEach(k => localStorage.setItem('gh_' + k, c[k]));
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  const IMAGE_EXT = ['jpg','jpeg','png','gif','webp','bmp','svg','avif'];
+  const VIDEO_EXT = ['mp4','webm','ogg','mov','avi','mkv','m4v'];
+  const ext = n => (n.split('.').pop() || '').toLowerCase();
+  const isImg = n => IMAGE_EXT.includes(ext(n));
+  const isVid = n => VIDEO_EXT.includes(ext(n));
+  const rawUrl = name => {
+    const c = cfg();
+    return `https://raw.githubusercontent.com/${c.owner}/${c.repo}/${c.branch}/${c.path}/${encodeURIComponent(name)}`;
+  };
+
+  let toastTimer;
+  function toast(msg, type = 'info') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.className = '', 3500);
+  }
+
+  // ── GitHub API ───────────────────────────────────────────────────────────────
+  async function ghAPI(method, endpoint, body) {
+    const { token } = cfg();
+    if (!token) { toast('Set your GitHub token first.', 'error'); throw new Error('no token'); }
+    const res = await fetch('https://api.github.com' + endpoint, {
+      method,
+      headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json', Accept: 'application/vnd.github+json' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.message || 'HTTP ' + res.status);
+    }
+    return res.json();
+  }
+
+  async function listMedia() {
+    const c = cfg();
+    try {
+      const data = await ghAPI('GET', `/repos/${c.owner}/${c.repo}/contents/${c.path}`);
+      return Array.isArray(data) ? data : [];
+    } catch (e) {
+      if (e.message.includes('404')) return [];
+      throw e;
+    }
+  }
+
+  async function uploadMedia(name, b64) {
+    const c = cfg();
+    let sha;
+    try { sha = (await ghAPI('GET', `/repos/${c.owner}/${c.repo}/contents/${c.path}/${encodeURIComponent(name)}`)).sha; } catch (_) {}
+    return ghAPI('PUT', `/repos/${c.owner}/${c.repo}/contents/${c.path}/${encodeURIComponent(name)}`, {
+      message: 'Upload ' + name, content: b64, branch: c.branch, ...(sha ? { sha } : {}),
+    });
+  }
+
+  async function deleteMedia(name, sha) {
+    const c = cfg();
+    return ghAPI('DELETE', `/repos/${c.owner}/${c.repo}/contents/${c.path}/${encodeURIComponent(name)}`, {
+      message: 'Delete ' + name, sha, branch: c.branch,
+    });
+  }
+
+  function fileToBase64(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  // ── Gallery ──────────────────────────────────────────────────────────────────
+  let allFiles = [], shown = [], activeFilter = 'all', lbIdx = 0;
+
+  async function loadGallery() {
+    const loader = document.getElementById('gallery-loader');
+    document.getElementById('gallery').innerHTML = '';
+    loader.classList.add('show');
+    try {
+      allFiles = await listMedia();
+      applyFilter();
+    } catch (e) {
+      toast('Load failed: ' + e.message, 'error');
+    } finally {
+      loader.classList.remove('show');
+    }
+  }
+
+  function applyFilter() {
+    const q = document.getElementById('search-box').value.toLowerCase();
+    shown = allFiles.filter(f => {
+      if (!isImg(f.name) && !isVid(f.name)) return false;
+      if (activeFilter === 'image' && !isImg(f.name)) return false;
+      if (activeFilter === 'video' && !isVid(f.name)) return false;
+      if (q && !f.name.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    render();
+  }
+
+  function render() {
+    const g = document.getElementById('gallery');
+    document.getElementById('gallery-count').textContent = shown.length + ' file' + (shown.length !== 1 ? 's' : '');
+    g.innerHTML = '';
+    if (!shown.length) {
+      g.innerHTML = '<div id="empty">No media yet. Upload your first file above.</div>';
+      return;
+    }
+    shown.forEach((file, i) => {
+      const url = rawUrl(file.name);
+      const card = document.createElement('div');
+      card.className = 'card';
+      if (isImg(file.name)) {
+        card.innerHTML = `
+          <img src="${url}" alt="${file.name}" loading="lazy" onerror="this.style.opacity='.25'"/>
+          <div class="card-footer">
+            <span class="card-name" title="${file.name}">${file.name}</span>
+            <button class="btn-danger del" data-name="${file.name}" data-sha="${file.sha}">✕</button>
+          </div>`;
+      } else {
+        card.innerHTML = `
+          <video src="${url}" preload="metadata" muted></video>
+          <div class="play-overlay"><div class="play-circle">▶</div></div>
+          <div class="card-footer">
+            <span class="card-name" title="${file.name}">${file.name}</span>
+            <button class="btn-danger del" data-name="${file.name}" data-sha="${file.sha}">✕</button>
+          </div>`;
+      }
+      card.addEventListener('click', e => { if (!e.target.closest('.del')) openLB(i); });
+      card.querySelector('.del').addEventListener('click', async e => {
+        e.stopPropagation();
+        const { name, sha } = e.currentTarget.dataset;
+        if (!confirm(`Delete "${name}"?`)) return;
+        try { await deleteMedia(name, sha); toast('Deleted ' + name, 'success'); loadGallery(); }
+        catch (err) { toast('Delete failed: ' + err.message, 'error'); }
+      });
+      g.appendChild(card);
+    });
+  }
+
+  // ── Lightbox ─────────────────────────────────────────────────────────────────
+  function openLB(idx) {
+    lbIdx = idx; showLBItem();
+    document.getElementById('lightbox').classList.add('open');
+  }
+  function showLBItem() {
+    const file = shown[lbIdx];
+    if (!file) return;
+    const url = rawUrl(file.name);
+    const wrap = document.getElementById('lb-media');
+    wrap.innerHTML = '';
+    if (isImg(file.name)) {
+      const img = document.createElement('img');
+      img.src = url; img.alt = file.name;
+      wrap.appendChild(img);
+    } else {
+      const vid = document.createElement('video');
+      vid.src = url; vid.controls = true; vid.autoplay = true;
+      wrap.appendChild(vid);
+    }
+    document.getElementById('lb-caption').textContent = `${file.name}  (${lbIdx + 1} / ${shown.length})`;
+    document.getElementById('lb-prev').disabled = lbIdx === 0;
+    document.getElementById('lb-next').disabled = lbIdx === shown.length - 1;
+  }
+  function closeLB() {
+    document.getElementById('lightbox').classList.remove('open');
+    const v = document.querySelector('#lb-media video');
+    if (v) v.pause();
+    document.getElementById('lb-media').innerHTML = '';
+  }
+  document.getElementById('lb-close').addEventListener('click', closeLB);
+  document.getElementById('lightbox').addEventListener('click', e => { if (e.target.id === 'lightbox') closeLB(); });
+  document.getElementById('lb-prev').addEventListener('click', () => { if (lbIdx > 0) { lbIdx--; showLBItem(); } });
+  document.getElementById('lb-next').addEventListener('click', () => { if (lbIdx < shown.length - 1) { lbIdx++; showLBItem(); } });
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('lightbox').classList.contains('open')) return;
+    if (e.key === 'Escape') closeLB();
+    if (e.key === 'ArrowLeft' && lbIdx > 0) { lbIdx--; showLBItem(); }
+    if (e.key === 'ArrowRight' && lbIdx < shown.length - 1) { lbIdx++; showLBItem(); }
+  });
+
+  // ── Upload ───────────────────────────────────────────────────────────────────
+  async function handleFiles(files) {
+    if (!files.length) return;
+    if (!cfg().token) { toast('Set your GitHub token first.', 'error'); return; }
+    const wrap = document.getElementById('upload-progress');
+    wrap.style.display = 'flex'; wrap.innerHTML = '';
+
+    const items = Array.from(files).map(f => {
+      const mb = f.size / 1024 / 1024;
+      const el = document.createElement('div');
+      el.className = 'prog-item';
+      el.innerHTML = `<span class="fname">${f.name}</span>
+        <div class="prog-bar-wrap"><div class="prog-bar" style="width:0"></div></div>
+        <span class="st">${mb > 25 ? '<span class="err">Too large (&gt;25MB)</span>' : '…'}</span>`;
+      wrap.appendChild(el);
+      return { f, el, mb };
+    });
+
+    for (const { f, el, mb } of items) {
+      if (mb > 25) continue;
+      const bar = el.querySelector('.prog-bar'), st = el.querySelector('.st');
+      try {
+        bar.style.width = '30%';
+        const b64 = await fileToBase64(f);
+        bar.style.width = '70%';
+        await uploadMedia(f.name, b64);
+        bar.style.width = '100%';
+        st.innerHTML = '<span class="ok">✓ Done</span>';
+      } catch (e) {
+        bar.style.background = 'var(--red)';
+        st.innerHTML = `<span class="err">✕ ${e.message.slice(0, 28)}</span>`;
+      }
+    }
+    toast('Upload complete!', 'success');
+    setTimeout(() => { wrap.style.display = 'none'; }, 3000);
+    loadGallery();
+  }
+
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => { handleFiles(e.target.files); fileInput.value = ''; });
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+
+  // ── Token Banner ─────────────────────────────────────────────────────────────
+  function syncBanner() { document.getElementById('token-banner').classList.toggle('show', !cfg().token); }
+  document.getElementById('save-token-btn').addEventListener('click', () => {
+    const v = document.getElementById('token-input').value.trim();
+    if (!v) { toast('Enter a token.', 'error'); return; }
+    localStorage.setItem('gh_token', v);
+    syncBanner(); toast('Token saved!', 'success'); loadGallery();
+  });
+  document.getElementById('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('save-token-btn').click(); });
+
+  // ── Settings Modal ────────────────────────────────────────────────────────────
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    const c = cfg();
+    document.getElementById('s-token').value = c.token;
+    document.getElementById('s-owner').value = c.owner;
+    document.getElementById('s-repo').value = c.repo;
+    document.getElementById('s-branch').value = c.branch;
+    document.getElementById('s-path').value = c.path;
+    document.getElementById('settings-modal').classList.add('open');
+  });
+  document.getElementById('s-cancel').addEventListener('click', () => document.getElementById('settings-modal').classList.remove('open'));
+  document.getElementById('s-save').addEventListener('click', () => {
+    saveCfg({ token: document.getElementById('s-token').value.trim(), owner: document.getElementById('s-owner').value.trim(), repo: document.getElementById('s-repo').value.trim(), branch: document.getElementById('s-branch').value.trim(), path: document.getElementById('s-path').value.trim() });
+    document.getElementById('settings-modal').classList.remove('open');
+    syncBanner(); toast('Settings saved!', 'success'); loadGallery();
+  });
+  document.getElementById('settings-modal').addEventListener('click', e => { if (e.target.id === 'settings-modal') document.getElementById('settings-modal').classList.remove('open'); });
+
+  // ── Filters & Search ──────────────────────────────────────────────────────────
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active'); activeFilter = t.dataset.filter; applyFilter();
+  }));
+  document.getElementById('search-box').addEventListener('input', applyFilter);
+  document.getElementById('refresh-btn').addEventListener('click', loadGallery);
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
+  syncBanner();
+  if (cfg().token) loadGallery();
+</script>
+</body>
+</html>
