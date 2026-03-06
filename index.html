@@ -1259,7 +1259,7 @@ document.getElementById('s-save').addEventListener('click', ()=>{
 });
 document.getElementById('s-signout').addEventListener('click', ()=>{
   if(!confirm('Sign out? Your token will be removed.')) return;
-  ['gh_token','gh_owner','gh_repo','gh_branch','gh_path'].forEach(k=>localStorage.removeItem(k));
+  ['gh_owner','gh_repo','gh_branch','gh_path'].forEach(k=>localStorage.removeItem(k));
   sessionStorage.removeItem(TOKEN_KEY);
   location.reload();
 });
