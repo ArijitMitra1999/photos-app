@@ -1,554 +1,1222 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Photos App</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <title>Photos</title>
   <style>
+    /* ── Reset & Base ─────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #0f0f0f;
-      --surface: #1a1a1a;
-      --surface2: #242424;
-      --border: #2e2e2e;
-      --accent: #7c6aff;
-      --accent-hover: #9b8dff;
-      --text: #f0f0f0;
-      --text-muted: #888;
-      --red: #ff5555;
-      --green: #50fa7b;
-      --radius: 12px;
+      --blue:   #007AFF;
+      --red:    #FF3B30;
+      --green:  #34C759;
+      --orange: #FF9500;
+      --bg:     #ffffff;
+      --bg2:    #f2f2f7;
+      --bg3:    #e5e5ea;
+      --card:   #ffffff;
+      --label:  #000000;
+      --label2: rgba(60,60,67,0.60);
+      --label3: rgba(60,60,67,0.30);
+      --fill:   rgba(120,120,128,0.20);
+      --fill2:  rgba(120,120,128,0.12);
+      --sep:    rgba(60,60,67,0.12);
+      --nav-h:  83px;
+      --hdr-h:  52px;
+      --radius: 13px;
+      --glass-bg: rgba(255,255,255,0.82);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --blue:   #0A84FF;
+        --red:    #FF453A;
+        --green:  #30D158;
+        --bg:     #000000;
+        --bg2:    #1c1c1e;
+        --bg3:    #2c2c2e;
+        --card:   #1c1c1e;
+        --label:  #ffffff;
+        --label2: rgba(235,235,245,0.60);
+        --label3: rgba(235,235,245,0.30);
+        --fill:   rgba(118,118,128,0.24);
+        --fill2:  rgba(118,118,128,0.16);
+        --sep:    rgba(84,84,88,0.65);
+        --glass-bg: rgba(28,28,30,0.82);
+      }
     }
 
+    html { height: 100%; }
     body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
       background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--label);
+      height: 100%;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button { cursor: pointer; border: none; background: none; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+
+    /* ── Screens ─────────────────────────────────────────────────────────── */
+    .screen { display: none; }
+    .screen.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── Onboarding ──────────────────────────────────────────────────────── */
+    #screen-onboarding {
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--bg2);
+      padding: 32px 20px;
+    }
+    .onboarding-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 40px 32px 32px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 4px 40px rgba(0,0,0,0.08);
+    }
+    .onb-icon {
+      width: 80px; height: 80px;
+      background: linear-gradient(145deg, #ffd60a, #ff9f0a, #ff375f);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 24px rgba(255,60,50,0.3);
+    }
+    .onb-icon svg { width: 44px; height: 44px; color: white; }
+    .onboarding-card h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 8px; }
+    .onboarding-card p { font-size: 0.95rem; color: var(--label2); line-height: 1.5; margin-bottom: 28px; }
+    .onb-steps { text-align: left; margin-bottom: 28px; }
+    .onb-step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+    .step-num {
+      width: 26px; height: 26px; flex-shrink: 0;
+      background: var(--blue); color: white;
+      border-radius: 50%; font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-text { font-size: 0.88rem; color: var(--label2); padding-top: 4px; line-height: 1.4; }
+    .step-text a { color: var(--blue); text-decoration: none; font-weight: 500; }
+    .token-field-wrap {
+      background: var(--bg2);
+      border-radius: var(--radius);
+      padding: 4px 8px;
+      display: flex; gap: 8px; align-items: center;
+      margin-bottom: 12px;
+    }
+    .token-field-wrap svg { width: 18px; height: 18px; color: var(--label3); flex-shrink: 0; }
+    #onb-token {
+      flex: 1; background: none; border: none; outline: none;
+      font-family: inherit; font-size: 0.95rem; color: var(--label);
+      padding: 10px 4px;
+    }
+    #onb-token::placeholder { color: var(--label3); }
+    .btn-apple {
+      width: 100%; padding: 14px;
+      background: var(--blue); color: #fff;
+      border-radius: var(--radius); font-size: 1rem; font-weight: 600;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-apple:active { opacity: 0.8; transform: scale(0.98); }
+
+    /* ── Main App ────────────────────────────────────────────────────────── */
+    #screen-app {
+      padding-bottom: var(--nav-h);
       min-height: 100vh;
     }
 
-    /* Header */
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 24px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 100;
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    .app-header {
+      position: sticky; top: 0; z-index: 200;
+      height: var(--hdr-h);
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding: 0 16px 10px;
+      background: var(--glass-bg);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 0.5px solid var(--sep);
     }
-    .logo { display: flex; align-items: center; gap: 10px; }
-    .logo h1 { font-size: 1.2rem; font-weight: 700; }
-    .header-actions { display: flex; gap: 10px; }
+    .hdr-title {
+      font-size: 1.3rem; font-weight: 700; letter-spacing: -0.3px;
+      transition: font-size 0.2s;
+    }
+    .hdr-title.large { font-size: 2rem; letter-spacing: -0.5px; }
+    .hdr-actions { display: flex; gap: 6px; align-items: center; }
+    .hdr-btn {
+      padding: 6px 10px;
+      font-size: 0.95rem; font-weight: 500; color: var(--blue);
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .hdr-btn:hover { background: var(--fill2); }
+    .hdr-btn.active { color: var(--red); }
+    .hdr-icon-btn {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: var(--fill);
+      color: var(--blue);
+      transition: background 0.15s;
+    }
+    .hdr-icon-btn:hover { background: var(--fill2); }
+    .hdr-icon-btn svg { width: 17px; height: 17px; }
 
-    /* Buttons */
-    button { cursor: pointer; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-primary { background: var(--accent); color: #fff; padding: 8px 16px; }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-ghost { background: transparent; color: var(--text-muted); padding: 8px 12px; border: 1px solid var(--border); }
-    .btn-ghost:hover { color: var(--text); border-color: #555; }
-    .btn-danger { background: rgba(255,85,85,0.15); color: var(--red); padding: 5px 9px; font-size: 0.78rem; border-radius: 6px; }
-    .btn-danger:hover { background: rgba(255,85,85,0.3); }
+    /* ── Search Bar ─────────────────────────────────────────────────────── */
+    .search-bar-wrap {
+      padding: 8px 16px 6px;
+      background: var(--glass-bg);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      position: sticky; top: var(--hdr-h); z-index: 190;
+    }
+    .search-bar {
+      background: var(--fill);
+      border-radius: 10px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 10px;
+    }
+    .search-bar svg { width: 15px; height: 15px; color: var(--label3); flex-shrink: 0; }
+    #search-input {
+      flex: 1; background: none; border: none; outline: none;
+      font-family: inherit; font-size: 0.95rem; color: var(--label);
+    }
+    #search-input::placeholder { color: var(--label3); }
 
-    /* Token Banner */
-    #token-banner {
-      background: rgba(124,106,255,0.1);
-      border: 1px solid rgba(124,106,255,0.35);
+    /* ── Filter Pill Tabs ───────────────────────────────────────────────── */
+    .filter-wrap {
+      padding: 10px 16px 10px;
+      display: flex; gap: 8px; overflow-x: auto;
+      scrollbar-width: none;
+      background: var(--bg);
+    }
+    .filter-wrap::-webkit-scrollbar { display: none; }
+    .pill {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.88rem; font-weight: 500;
+      white-space: nowrap;
+      background: var(--fill);
+      color: var(--label2);
+      transition: all 0.18s;
+      border: none; cursor: pointer;
+    }
+    .pill.active { background: var(--blue); color: #fff; }
+
+    /* ── Section Header ─────────────────────────────────────────────────── */
+    .section-hdr {
+      padding: 10px 16px 6px;
+      display: flex; align-items: baseline; justify-content: space-between;
+    }
+    .section-hdr h2 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.2px; }
+    .section-hdr span { font-size: 0.82rem; color: var(--label2); }
+
+    /* ── Photo Grid ─────────────────────────────────────────────────────── */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+    }
+    @media (min-width: 600px) {
+      .photo-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (min-width: 900px) {
+      .photo-grid { grid-template-columns: repeat(5, 1fr); }
+    }
+    @media (min-width: 1200px) {
+      .photo-grid { grid-template-columns: repeat(6, 1fr); }
+    }
+
+    .photo-item {
+      position: relative;
+      aspect-ratio: 1;
+      overflow: hidden;
+      background: var(--bg3);
+      cursor: pointer;
+    }
+    .photo-item img,
+    .photo-item video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity 0.3s;
+    }
+    .photo-item img.loading { opacity: 0; }
+    .photo-item img.loaded  { opacity: 1; }
+    .photo-item:active { opacity: 0.85; }
+
+    /* Selection check */
+    .photo-item .check-ring {
+      position: absolute; top: 6px; left: 6px;
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.9);
+      background: rgba(0,0,0,0.15);
+      display: none; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    body.select-mode .check-ring { display: flex; }
+    .photo-item.selected .check-ring {
+      background: var(--blue);
+      border-color: var(--blue);
+    }
+    .check-ring svg { width: 14px; height: 14px; color: white; display: none; }
+    .photo-item.selected .check-ring svg { display: block; }
+
+    /* Video badge */
+    .vid-badge {
+      position: absolute; bottom: 5px; left: 6px;
+      display: flex; align-items: center; gap: 3px;
+      color: white; font-size: 0.7rem; font-weight: 600;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .vid-badge svg { width: 11px; height: 11px; }
+
+    /* Skeleton shimmer */
+    .shimmer {
+      background: linear-gradient(90deg, var(--bg3) 25%, var(--bg2) 50%, var(--bg3) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 80px 32px;
+      color: var(--label2);
+    }
+    .empty-state svg { width: 64px; height: 64px; margin-bottom: 16px; color: var(--label3); }
+    .empty-state h3 { font-size: 1.15rem; font-weight: 600; color: var(--label); margin-bottom: 6px; }
+    .empty-state p  { font-size: 0.9rem; line-height: 1.5; }
+
+    /* ── Bottom Nav ──────────────────────────────────────────────────────── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: var(--glass-bg);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-top: 0.5px solid var(--sep);
+      display: flex; align-items: flex-start;
+      padding-top: 8px;
+      z-index: 200;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 3px; padding: 0 8px; cursor: pointer; border: none;
+      color: var(--label3); transition: color 0.15s;
+      font-size: 0.65rem; font-weight: 500; letter-spacing: 0.2px;
+    }
+    .nav-item svg { width: 24px; height: 24px; transition: transform 0.15s; }
+    .nav-item.active { color: var(--blue); }
+    .nav-item:active svg { transform: scale(0.88); }
+    .nav-item.nav-upload svg { color: var(--blue); }
+    .nav-item.nav-upload .nav-icon-wrap {
+      width: 44px; height: 44px;
+      background: var(--blue);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: -10px;
+      box-shadow: 0 4px 16px rgba(0,122,255,0.4);
+    }
+    .nav-item.nav-upload .nav-icon-wrap svg { color: white; width: 22px; height: 22px; }
+
+    /* ── Views ───────────────────────────────────────────────────────────── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Settings View ───────────────────────────────────────────────────── */
+    .settings-wrap { padding: 0 0 40px; }
+    .settings-section { margin-top: 28px; padding: 0 16px; }
+    .settings-section-title { font-size: 0.8rem; color: var(--label2); text-transform: uppercase; letter-spacing: 0.5px; padding: 0 6px; margin-bottom: 6px; font-weight: 500; }
+    .settings-group { background: var(--card); border-radius: var(--radius); overflow: hidden; }
+    .settings-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 16px;
+      border-bottom: 0.5px solid var(--sep);
+      position: relative;
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row-icon { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .settings-row-icon svg { width: 17px; height: 17px; color: white; }
+    .settings-row-label { font-size: 0.95rem; flex: 1; }
+    .settings-row input {
+      flex: 1; background: none; border: none; outline: none;
+      font-family: inherit; font-size: 0.9rem;
+      color: var(--label2); text-align: right;
+    }
+    .settings-row input::placeholder { color: var(--label3); }
+    .settings-save-btn {
+      margin: 20px 16px 0;
+      width: calc(100% - 32px);
+      padding: 14px;
+      background: var(--blue); color: white;
+      border-radius: var(--radius); font-size: 1rem; font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .settings-save-btn:active { opacity: 0.8; }
+    .settings-danger-btn {
+      margin: 12px 16px 0;
+      width: calc(100% - 32px);
+      padding: 14px;
+      background: var(--card); color: var(--red);
+      border-radius: var(--radius); font-size: 1rem; font-weight: 500;
+    }
+
+    /* ── Lightbox ────────────────────────────────────────────────────────── */
+    #lightbox {
+      position: fixed; inset: 0; z-index: 1000;
+      background: #000;
+      display: none; flex-direction: column;
+      opacity: 0; transition: opacity 0.25s;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox.visible { opacity: 1; }
+
+    .lb-top-bar {
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent);
+      z-index: 10;
+    }
+    .lb-btn {
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(8px);
+      color: white; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .lb-btn:hover { background: rgba(255,255,255,0.22); }
+    .lb-btn svg { width: 18px; height: 18px; }
+    .lb-top-bar .lb-actions { display: flex; gap: 8px; }
+
+    .lb-media-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    #lb-img {
+      max-width: 100%; max-height: 100%;
+      object-fit: contain;
+      user-select: none;
+      transition: transform 0.3s ease;
+    }
+    #lb-vid {
+      max-width: 100%; max-height: 100%;
+      background: #000;
+    }
+
+    .lb-arrow {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(8px);
+      color: white; cursor: pointer;
+      transition: background 0.15s, opacity 0.2s;
+      z-index: 5;
+    }
+    .lb-arrow:hover { background: rgba(255,255,255,0.22); }
+    .lb-arrow:disabled { opacity: 0.2; pointer-events: none; }
+    .lb-arrow svg { width: 20px; height: 20px; }
+    #lb-prev { left: 12px; }
+    #lb-next { right: 12px; }
+
+    .lb-bottom-bar {
+      padding: 12px 16px 28px;
+      background: linear-gradient(to top, rgba(0,0,0,0.65), transparent);
+      text-align: center;
+    }
+    .lb-filename { color: rgba(255,255,255,0.9); font-size: 0.88rem; font-weight: 500; margin-bottom: 4px; }
+    .lb-counter { color: rgba(255,255,255,0.45); font-size: 0.78rem; }
+
+    /* ── Upload Sheet ────────────────────────────────────────────────────── */
+    #upload-sheet {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+      background: var(--bg2);
+      border-radius: 20px 20px 0 0;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #upload-sheet.open { transform: translateY(0); }
+    .sheet-backdrop {
+      position: fixed; inset: 0; z-index: 499;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(2px);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .sheet-backdrop.show { opacity: 1; pointer-events: all; }
+    .sheet-handle {
+      width: 36px; height: 4px; border-radius: 2px;
+      background: var(--fill); margin: 10px auto 0;
+    }
+    .sheet-header { padding: 16px 20px 0; display: flex; align-items: center; justify-content: space-between; }
+    .sheet-header h3 { font-size: 1.1rem; font-weight: 700; }
+    .sheet-close { width: 30px; height: 30px; background: var(--fill); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--label2); }
+    .sheet-close svg { width: 14px; height: 14px; }
+
+    .drop-area {
+      margin: 16px;
+      border: 1.5px dashed var(--sep);
       border-radius: var(--radius);
-      padding: 18px 24px;
-      margin: 20px 24px 0;
-      display: none;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--card);
     }
-    #token-banner.show { display: flex; }
-    #token-banner .desc { flex: 1; font-size: 0.88rem; color: var(--text-muted); }
-    #token-banner strong { color: var(--text); display: block; margin-bottom: 2px; }
-    #token-row { display: flex; gap: 8px; }
-    #token-input {
-      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
-      color: var(--text); padding: 8px 12px; font-size: 0.875rem; width: 260px;
-    }
-    #token-input:focus { outline: none; border-color: var(--accent); }
-
-    /* Upload */
-    #upload-section { padding: 20px 24px 0; }
-    #drop-zone {
-      border: 2px dashed var(--border); border-radius: var(--radius);
-      padding: 36px; text-align: center; cursor: pointer;
-      transition: all 0.2s; background: var(--surface);
-    }
-    #drop-zone:hover, #drop-zone.drag-over { border-color: var(--accent); background: rgba(124,106,255,0.06); }
-    #drop-zone .icon { font-size: 2.5rem; margin-bottom: 8px; }
-    #drop-zone p { color: var(--text-muted); font-size: 0.88rem; margin-top: 4px; }
-    #drop-zone strong { color: var(--text); }
+    .drop-area:hover, .drop-area.drag-over { border-color: var(--blue); background: rgba(0,122,255,0.04); }
+    .drop-icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .drop-area h4 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    .drop-area p { font-size: 0.82rem; color: var(--label2); }
     #file-input { display: none; }
 
-    #upload-progress { margin-top: 14px; display: none; flex-direction: column; gap: 8px; }
-    .prog-item {
-      background: var(--surface2); border-radius: 8px; padding: 10px 14px;
-      display: flex; align-items: center; gap: 12px; font-size: 0.83rem;
+    .upload-list { padding: 0 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+    .upload-row {
+      background: var(--card); border-radius: var(--radius);
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px;
     }
-    .prog-item .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .prog-bar-wrap { width: 90px; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
-    .prog-bar { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.3s; }
-    .ok { color: var(--green); } .err { color: var(--red); }
-
-    /* Gallery */
-    #gallery-section { padding: 20px 24px 48px; }
-    .sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
-    .sec-header h2 { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); min-width: 80px; }
-    .filters { display: flex; gap: 6px; }
-    .tab { padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-muted); }
-    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-    #search-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 7px 12px; font-size: 0.875rem; width: 190px; }
-    #search-box:focus { outline: none; border-color: var(--accent); }
-
-    #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
-    .card { background: var(--surface); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); cursor: pointer; transition: transform 0.15s, border-color 0.15s; position: relative; }
-    .card:hover { transform: translateY(-2px); border-color: #444; }
-    .card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--surface2); }
-    .card video { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #000; }
-    .play-overlay { position: absolute; top: 0; left: 0; right: 0; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-    .play-circle { width: 42px; height: 42px; background: rgba(0,0,0,0.6); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-    .card-footer { padding: 9px 11px; display: flex; align-items: center; justify-content: space-between; }
-    .card-name { font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 6px; }
-
-    #empty { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 0.9rem; }
-    #gallery-loader { text-align: center; padding: 40px; display: none; color: var(--text-muted); font-size: 0.9rem; }
-    #gallery-loader.show { display: block; }
-    .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Lightbox */
-    #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.93); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
-    #lightbox.open { display: flex; }
-    #lb-close { position: fixed; top: 18px; right: 22px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 8px; cursor: pointer; z-index: 1001; font-size: 1rem; }
-    #lb-close:hover { background: var(--border); }
-    #lb-inner { display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: 90vw; }
-    #lb-media img, #lb-media video { max-width: 85vw; max-height: 80vh; border-radius: var(--radius); object-fit: contain; box-shadow: 0 25px 80px rgba(0,0,0,0.6); }
-    #lb-media video { background: #000; }
-    #lb-caption { font-size: 0.83rem; color: var(--text-muted); }
-    #lb-nav { display: flex; gap: 8px; }
-    #lb-nav button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 16px; border-radius: 8px; }
-    #lb-nav button:hover { background: var(--border); }
-    #lb-nav button:disabled { opacity: 0.3; cursor: default; }
-
-    /* Settings Modal */
-    #settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 500; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-    #settings-modal.open { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 420px; max-width: 92vw; }
-    .modal h2 { font-size: 1.05rem; margin-bottom: 4px; }
-    .modal .sub { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 20px; }
-    .field { margin-bottom: 14px; }
-    .field label { display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 5px; }
-    .field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 9px 12px; font-size: 0.875rem; }
-    .field input:focus { outline: none; border-color: var(--accent); }
-    .hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; }
-    .hint a { color: var(--accent); text-decoration: none; }
-    .modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
-
-    /* Toast */
-    #toast { position: fixed; bottom: 22px; right: 22px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 16px; font-size: 0.85rem; z-index: 2000; opacity: 0; transform: translateY(8px); transition: all 0.22s; max-width: 300px; }
-    #toast.show { opacity: 1; transform: translateY(0); }
-    #toast.success { border-left: 3px solid var(--green); }
-    #toast.error { border-left: 3px solid var(--red); }
-
-    @media (max-width: 580px) {
-      #gallery { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); }
-      #drop-zone { padding: 24px; }
+    .upload-thumb {
+      width: 40px; height: 40px; border-radius: 8px;
+      object-fit: cover; background: var(--bg3); flex-shrink: 0;
     }
+    .upload-info { flex: 1; overflow: hidden; }
+    .upload-fname { font-size: 0.9rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .upload-size { font-size: 0.75rem; color: var(--label2); margin-top: 2px; }
+    .upload-bar-wrap { height: 3px; background: var(--bg3); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+    .upload-bar { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.3s; }
+    .upload-status { font-size: 0.8rem; white-space: nowrap; }
+    .ok  { color: var(--green); }
+    .err { color: var(--red); }
+
+    /* ── Toast ───────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: calc(var(--nav-h) + 12px); left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(50,50,52,0.92);
+      color: #fff;
+      backdrop-filter: blur(16px) saturate(180%);
+      border-radius: 20px;
+      padding: 10px 18px;
+      font-size: 0.88rem; font-weight: 500;
+      white-space: nowrap;
+      z-index: 3000;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Upload progress banner ─────────────────────────────────────────── */
+    #upload-banner {
+      position: fixed; top: var(--hdr-h); left: 0; right: 0;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      border-bottom: 0.5px solid var(--sep);
+      padding: 10px 16px;
+      display: none; align-items: center; gap: 10px;
+      z-index: 195; font-size: 0.85rem;
+    }
+    #upload-banner.show { display: flex; }
+    #upload-banner-bar-wrap { flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+    #upload-banner-bar { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.3s; }
+
+    /* ── Animations ─────────────────────────────────────────────────────── */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    .photo-item { animation: fadeUp 0.25s ease both; }
+
+    /* ── Scrollbar ───────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 0; height: 0; }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <span style="font-size:1.5rem">🖼️</span>
-    <h1>Photos App</h1>
-  </div>
-  <div class="header-actions">
-    <button class="btn-ghost" id="refresh-btn">↻ Refresh</button>
-    <button class="btn-ghost" id="settings-btn">⚙ Settings</button>
-  </div>
-</header>
-
-<!-- Token Banner -->
-<div id="token-banner" class="show">
-  <div class="desc">
-    <strong>GitHub token required</strong>
-    Enter a Personal Access Token with <code>repo</code> scope to upload &amp; manage media.
-  </div>
-  <div id="token-row">
-    <input id="token-input" type="password" placeholder="ghp_xxxxxxxxxxxx" />
-    <button class="btn-primary" id="save-token-btn">Save</button>
-  </div>
-</div>
-
-<!-- Upload -->
-<div id="upload-section">
-  <div id="drop-zone">
-    <input type="file" id="file-input" multiple accept="image/*,video/*" />
-    <div class="icon">📤</div>
-    <p><strong>Click to upload</strong> or drag &amp; drop</p>
-    <p>Photos &amp; Videos · max ~25 MB per file</p>
-  </div>
-  <div id="upload-progress"></div>
-</div>
-
-<!-- Gallery -->
-<div id="gallery-section">
-  <div class="sec-header">
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <h2 id="gallery-count">Media</h2>
-      <div class="filters">
-        <button class="tab active" data-filter="all">All</button>
-        <button class="tab" data-filter="image">Photos</button>
-        <button class="tab" data-filter="video">Videos</button>
+<!-- ── Onboarding ─────────────────────────────────────────────────── -->
+<div id="screen-onboarding" class="screen active">
+  <div class="onboarding-card">
+    <div class="onb-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <rect x="3" y="3" width="18" height="18" rx="3"/>
+        <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/>
+        <path d="m21 15-5-5L5 21" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1>Photos</h1>
+    <p>Your personal photo &amp; video library backed by GitHub. Private, always accessible, free.</p>
+    <div class="onb-steps">
+      <div class="onb-step">
+        <div class="step-num">1</div>
+        <div class="step-text">Go to <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank">GitHub → Settings → Tokens</a> and create a new token.</div>
+      </div>
+      <div class="onb-step">
+        <div class="step-num">2</div>
+        <div class="step-text">Select the <strong>repo</strong> scope. Click <strong>Generate token</strong> and copy it.</div>
+      </div>
+      <div class="onb-step">
+        <div class="step-num">3</div>
+        <div class="step-text">Paste your token below and tap <strong>Get Started</strong>.</div>
       </div>
     </div>
-    <input id="search-box" type="search" placeholder="Search…" />
+    <div class="token-field-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <input id="onb-token" type="password" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off" spellcheck="false"/>
+    </div>
+    <button class="btn-apple" id="onb-start">Get Started</button>
   </div>
-  <div id="gallery-loader"><span class="spinner"></span> Loading…</div>
-  <div id="gallery"></div>
 </div>
 
-<!-- Lightbox -->
+<!-- ── Main App ───────────────────────────────────────────────────── -->
+<div id="screen-app" class="screen">
+
+  <!-- Upload progress banner -->
+  <div id="upload-banner">
+    <span id="upload-banner-label">Uploading…</span>
+    <div id="upload-banner-bar-wrap"><div id="upload-banner-bar" style="width:0%"></div></div>
+    <span id="upload-banner-count" style="font-size:0.8rem;color:var(--label2)"></span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header" id="app-header">
+    <div class="hdr-title" id="hdr-title">Library</div>
+    <div class="hdr-actions" id="hdr-actions">
+      <button class="hdr-btn" id="select-btn">Select</button>
+      <button class="hdr-icon-btn" id="refresh-btn" title="Refresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+          <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+          <path d="M3 21v-5h5"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Search Bar -->
+  <div class="search-bar-wrap" id="search-bar-wrap">
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="Search" autocomplete="off"/>
+    </div>
+  </div>
+
+  <!-- Library View -->
+  <div id="view-library" class="view active">
+    <div class="filter-wrap" id="filter-wrap">
+      <button class="pill active" data-filter="all">All</button>
+      <button class="pill" data-filter="image">Photos</button>
+      <button class="pill" data-filter="video">Videos</button>
+    </div>
+    <div class="section-hdr">
+      <h2>Recents</h2>
+      <span id="media-count">—</span>
+    </div>
+    <div id="photo-grid" class="photo-grid"></div>
+    <div id="empty-state" class="empty-state" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+        <rect x="3" y="3" width="18" height="18" rx="3"/>
+        <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/>
+        <path d="m21 15-5-5L5 21"/>
+      </svg>
+      <h3>No Photos Yet</h3>
+      <p>Tap the + button below to import your first photo or video.</p>
+    </div>
+    <div id="grid-loader" class="photo-grid" style="display:none">
+      <!-- skeleton items filled by JS -->
+    </div>
+  </div>
+
+  <!-- Search View -->
+  <div id="view-search" class="view">
+    <div id="search-results" class="photo-grid" style="margin-top:4px"></div>
+    <div id="search-empty" class="empty-state" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <h3>No Results</h3>
+      <p>Try a different search term.</p>
+    </div>
+  </div>
+
+  <!-- Settings View -->
+  <div id="view-settings" class="view">
+    <div class="settings-wrap">
+      <div class="settings-section">
+        <div class="settings-section-title">GitHub Authentication</div>
+        <div class="settings-group">
+          <div class="settings-row">
+            <div class="settings-row-icon" style="background:#1f6feb">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <span class="settings-row-label">Access Token</span>
+            <input id="s-token" type="password" placeholder="ghp_xxxx" autocomplete="off"/>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Repository</div>
+        <div class="settings-group">
+          <div class="settings-row">
+            <div class="settings-row-icon" style="background:#5856d6">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </div>
+            <span class="settings-row-label">Owner</span>
+            <input id="s-owner" type="text" placeholder="username"/>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-icon" style="background:#30d158">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            </div>
+            <span class="settings-row-label">Repository</span>
+            <input id="s-repo" type="text" placeholder="photos-app"/>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-icon" style="background:#ff9f0a">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+            </div>
+            <span class="settings-row-label">Branch</span>
+            <input id="s-branch" type="text" placeholder="main"/>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-icon" style="background:#ff375f">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <span class="settings-row-label">Media Folder</span>
+            <input id="s-path" type="text" placeholder="media"/>
+          </div>
+        </div>
+      </div>
+      <button class="settings-save-btn" id="s-save">Save Settings</button>
+      <button class="settings-danger-btn" id="s-signout">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-view="library">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3 5h8v8H3zm0 10h8v6H3zM13 3h8v6h-8zm0 8h8v8h-8z" fill-rule="evenodd"/>
+      </svg>
+      Library
+    </button>
+    <button class="nav-item" data-view="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-linecap="round"/>
+      </svg>
+      Search
+    </button>
+    <button class="nav-item nav-upload" id="nav-upload-btn">
+      <div class="nav-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </div>
+      Import
+    </button>
+    <button class="nav-item" data-view="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/>
+      </svg>
+      Account
+    </button>
+  </nav>
+
+</div><!-- /screen-app -->
+
+<!-- ── Lightbox ───────────────────────────────────────────────────── -->
 <div id="lightbox">
-  <button id="lb-close">✕</button>
-  <div id="lb-inner">
-    <div id="lb-media"></div>
-    <div id="lb-caption"></div>
-    <div id="lb-nav">
-      <button id="lb-prev">← Prev</button>
-      <button id="lb-next">Next →</button>
+  <div class="lb-top-bar">
+    <button class="lb-btn" id="lb-close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M18 6 6 18M6 6l12 12"/>
+      </svg>
+    </button>
+    <div class="lb-actions">
+      <button class="lb-btn" id="lb-delete">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+      </button>
     </div>
+  </div>
+
+  <div class="lb-media-wrap">
+    <button class="lb-arrow" id="lb-prev">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <img id="lb-img" src="" alt="" style="display:none"/>
+    <video id="lb-vid" controls playsinline style="display:none"></video>
+    <button class="lb-arrow" id="lb-next">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+
+  <div class="lb-bottom-bar">
+    <div class="lb-filename" id="lb-filename"></div>
+    <div class="lb-counter" id="lb-counter"></div>
   </div>
 </div>
 
-<!-- Settings Modal -->
-<div id="settings-modal">
-  <div class="modal">
-    <h2>Settings</h2>
-    <p class="sub">Configure your GitHub repository connection.</p>
-    <div class="field">
-      <label>GitHub Personal Access Token</label>
-      <input type="password" id="s-token" placeholder="ghp_xxxxxxxxxxxx" />
-      <div class="hint">Create one at <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank">GitHub → Settings → Tokens</a> with <code>repo</code> scope.</div>
-    </div>
-    <div class="field">
-      <label>Repository Owner</label>
-      <input type="text" id="s-owner" />
-    </div>
-    <div class="field">
-      <label>Repository Name</label>
-      <input type="text" id="s-repo" />
-    </div>
-    <div class="field">
-      <label>Branch</label>
-      <input type="text" id="s-branch" />
-    </div>
-    <div class="field">
-      <label>Media Folder (in repo)</label>
-      <input type="text" id="s-path" />
-    </div>
-    <div class="modal-foot">
-      <button class="btn-ghost" id="s-cancel">Cancel</button>
-      <button class="btn-primary" id="s-save">Save Settings</button>
-    </div>
+<!-- ── Upload Sheet ───────────────────────────────────────────────── -->
+<div class="sheet-backdrop" id="sheet-backdrop"></div>
+<div id="upload-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <h3>Import Media</h3>
+    <button class="sheet-close" id="sheet-close-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M18 6 6 18M6 6l12 12"/>
+      </svg>
+    </button>
   </div>
+  <div class="drop-area" id="drop-area">
+    <input type="file" id="file-input" multiple accept="image/*,video/*"/>
+    <div class="drop-icon">🖼️</div>
+    <h4>Choose Photos &amp; Videos</h4>
+    <p>Tap to browse · or drag &amp; drop here<br/>Max ~25 MB per file via GitHub API</p>
+  </div>
+  <div id="upload-list" class="upload-list"></div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-  // ── Config ───────────────────────────────────────────────────────────────────
-  const DEFAULTS = { owner: 'ArijitMitra1999', repo: 'photos-app', branch: 'main', path: 'media' };
-
-  function cfg() {
-    return {
-      owner:  localStorage.getItem('gh_owner')  || DEFAULTS.owner,
-      repo:   localStorage.getItem('gh_repo')   || DEFAULTS.repo,
-      branch: localStorage.getItem('gh_branch') || DEFAULTS.branch,
-      path:   localStorage.getItem('gh_path')   || DEFAULTS.path,
-      token:  localStorage.getItem('gh_token')  || '',
-    };
-  }
-  function saveCfg(c) {
-    ['owner','repo','branch','path','token'].forEach(k => localStorage.setItem('gh_' + k, c[k]));
-  }
-
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-  const IMAGE_EXT = ['jpg','jpeg','png','gif','webp','bmp','svg','avif'];
-  const VIDEO_EXT = ['mp4','webm','ogg','mov','avi','mkv','m4v'];
-  const ext = n => (n.split('.').pop() || '').toLowerCase();
-  const isImg = n => IMAGE_EXT.includes(ext(n));
-  const isVid = n => VIDEO_EXT.includes(ext(n));
-  const rawUrl = name => {
-    const c = cfg();
-    return `https://raw.githubusercontent.com/${c.owner}/${c.repo}/${c.branch}/${c.path}/${encodeURIComponent(name)}`;
+// ── Config ──────────────────────────────────────────────────────────────────
+const DEFAULTS = { owner:'ArijitMitra1999', repo:'photos-app', branch:'main', path:'media' };
+function cfg() {
+  return {
+    owner:  ls('gh_owner')  || DEFAULTS.owner,
+    repo:   ls('gh_repo')   || DEFAULTS.repo,
+    branch: ls('gh_branch') || DEFAULTS.branch,
+    path:   ls('gh_path')   || DEFAULTS.path,
+    token:  ls('gh_token')  || '',
   };
+}
+function saveCfg(c) { ['owner','repo','branch','path','token'].forEach(k => localStorage.setItem('gh_'+k, c[k])); }
+function ls(k) { return localStorage.getItem(k) || ''; }
 
-  let toastTimer;
-  function toast(msg, type = 'info') {
-    const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.className = 'show ' + type;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.className = '', 3500);
-  }
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const IMG_EXT = ['jpg','jpeg','png','gif','webp','bmp','svg','avif','heic'];
+const VID_EXT = ['mp4','webm','ogg','mov','avi','mkv','m4v'];
+const ext  = n => (n.split('.').pop()||'').toLowerCase();
+const isImg = n => IMG_EXT.includes(ext(n));
+const isVid = n => VID_EXT.includes(ext(n));
+const rawUrl = name => { const c=cfg(); return `https://raw.githubusercontent.com/${c.owner}/${c.repo}/${c.branch}/${c.path}/${encodeURIComponent(name)}`; };
+const fmtSize = b => b<1048576 ? (b/1024).toFixed(0)+' KB' : (b/1048576).toFixed(1)+' MB';
 
-  // ── GitHub API ───────────────────────────────────────────────────────────────
-  async function ghAPI(method, endpoint, body) {
-    const { token } = cfg();
-    if (!token) { toast('Set your GitHub token first.', 'error'); throw new Error('no token'); }
-    const res = await fetch('https://api.github.com' + endpoint, {
-      method,
-      headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json', Accept: 'application/vnd.github+json' },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      throw new Error(e.message || 'HTTP ' + res.status);
-    }
-    return res.json();
-  }
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
 
-  async function listMedia() {
-    const c = cfg();
-    try {
-      const data = await ghAPI('GET', `/repos/${c.owner}/${c.repo}/contents/${c.path}`);
-      return Array.isArray(data) ? data : [];
-    } catch (e) {
-      if (e.message.includes('404')) return [];
-      throw e;
-    }
-  }
-
-  async function uploadMedia(name, b64) {
-    const c = cfg();
-    let sha;
-    try { sha = (await ghAPI('GET', `/repos/${c.owner}/${c.repo}/contents/${c.path}/${encodeURIComponent(name)}`)).sha; } catch (_) {}
-    return ghAPI('PUT', `/repos/${c.owner}/${c.repo}/contents/${c.path}/${encodeURIComponent(name)}`, {
-      message: 'Upload ' + name, content: b64, branch: c.branch, ...(sha ? { sha } : {}),
-    });
-  }
-
-  async function deleteMedia(name, sha) {
-    const c = cfg();
-    return ghAPI('DELETE', `/repos/${c.owner}/${c.repo}/contents/${c.path}/${encodeURIComponent(name)}`, {
-      message: 'Delete ' + name, sha, branch: c.branch,
-    });
-  }
-
-  function fileToBase64(file) {
-    return new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(r.result.split(',')[1]);
-      r.onerror = rej;
-      r.readAsDataURL(file);
-    });
-  }
-
-  // ── Gallery ──────────────────────────────────────────────────────────────────
-  let allFiles = [], shown = [], activeFilter = 'all', lbIdx = 0;
-
-  async function loadGallery() {
-    const loader = document.getElementById('gallery-loader');
-    document.getElementById('gallery').innerHTML = '';
-    loader.classList.add('show');
-    try {
-      allFiles = await listMedia();
-      applyFilter();
-    } catch (e) {
-      toast('Load failed: ' + e.message, 'error');
-    } finally {
-      loader.classList.remove('show');
-    }
-  }
-
-  function applyFilter() {
-    const q = document.getElementById('search-box').value.toLowerCase();
-    shown = allFiles.filter(f => {
-      if (!isImg(f.name) && !isVid(f.name)) return false;
-      if (activeFilter === 'image' && !isImg(f.name)) return false;
-      if (activeFilter === 'video' && !isVid(f.name)) return false;
-      if (q && !f.name.toLowerCase().includes(q)) return false;
-      return true;
-    });
-    render();
-  }
-
-  function render() {
-    const g = document.getElementById('gallery');
-    document.getElementById('gallery-count').textContent = shown.length + ' file' + (shown.length !== 1 ? 's' : '');
-    g.innerHTML = '';
-    if (!shown.length) {
-      g.innerHTML = '<div id="empty">No media yet. Upload your first file above.</div>';
-      return;
-    }
-    shown.forEach((file, i) => {
-      const url = rawUrl(file.name);
-      const card = document.createElement('div');
-      card.className = 'card';
-      if (isImg(file.name)) {
-        card.innerHTML = `
-          <img src="${url}" alt="${file.name}" loading="lazy" onerror="this.style.opacity='.25'"/>
-          <div class="card-footer">
-            <span class="card-name" title="${file.name}">${file.name}</span>
-            <button class="btn-danger del" data-name="${file.name}" data-sha="${file.sha}">✕</button>
-          </div>`;
-      } else {
-        card.innerHTML = `
-          <video src="${url}" preload="metadata" muted></video>
-          <div class="play-overlay"><div class="play-circle">▶</div></div>
-          <div class="card-footer">
-            <span class="card-name" title="${file.name}">${file.name}</span>
-            <button class="btn-danger del" data-name="${file.name}" data-sha="${file.sha}">✕</button>
-          </div>`;
-      }
-      card.addEventListener('click', e => { if (!e.target.closest('.del')) openLB(i); });
-      card.querySelector('.del').addEventListener('click', async e => {
-        e.stopPropagation();
-        const { name, sha } = e.currentTarget.dataset;
-        if (!confirm(`Delete "${name}"?`)) return;
-        try { await deleteMedia(name, sha); toast('Deleted ' + name, 'success'); loadGallery(); }
-        catch (err) { toast('Delete failed: ' + err.message, 'error'); }
-      });
-      g.appendChild(card);
-    });
-  }
-
-  // ── Lightbox ─────────────────────────────────────────────────────────────────
-  function openLB(idx) {
-    lbIdx = idx; showLBItem();
-    document.getElementById('lightbox').classList.add('open');
-  }
-  function showLBItem() {
-    const file = shown[lbIdx];
-    if (!file) return;
-    const url = rawUrl(file.name);
-    const wrap = document.getElementById('lb-media');
-    wrap.innerHTML = '';
-    if (isImg(file.name)) {
-      const img = document.createElement('img');
-      img.src = url; img.alt = file.name;
-      wrap.appendChild(img);
-    } else {
-      const vid = document.createElement('video');
-      vid.src = url; vid.controls = true; vid.autoplay = true;
-      wrap.appendChild(vid);
-    }
-    document.getElementById('lb-caption').textContent = `${file.name}  (${lbIdx + 1} / ${shown.length})`;
-    document.getElementById('lb-prev').disabled = lbIdx === 0;
-    document.getElementById('lb-next').disabled = lbIdx === shown.length - 1;
-  }
-  function closeLB() {
-    document.getElementById('lightbox').classList.remove('open');
-    const v = document.querySelector('#lb-media video');
-    if (v) v.pause();
-    document.getElementById('lb-media').innerHTML = '';
-  }
-  document.getElementById('lb-close').addEventListener('click', closeLB);
-  document.getElementById('lightbox').addEventListener('click', e => { if (e.target.id === 'lightbox') closeLB(); });
-  document.getElementById('lb-prev').addEventListener('click', () => { if (lbIdx > 0) { lbIdx--; showLBItem(); } });
-  document.getElementById('lb-next').addEventListener('click', () => { if (lbIdx < shown.length - 1) { lbIdx++; showLBItem(); } });
-  document.addEventListener('keydown', e => {
-    if (!document.getElementById('lightbox').classList.contains('open')) return;
-    if (e.key === 'Escape') closeLB();
-    if (e.key === 'ArrowLeft' && lbIdx > 0) { lbIdx--; showLBItem(); }
-    if (e.key === 'ArrowRight' && lbIdx < shown.length - 1) { lbIdx++; showLBItem(); }
+// ── GitHub API ───────────────────────────────────────────────────────────────
+async function ghAPI(method, endpoint, body) {
+  const { token } = cfg();
+  if (!token) throw new Error('no_token');
+  const res = await fetch('https://api.github.com'+endpoint, {
+    method,
+    headers: { Authorization:`token ${token}`, 'Content-Type':'application/json', Accept:'application/vnd.github+json' },
+    body: body ? JSON.stringify(body) : undefined,
   });
+  if (!res.ok) { const e=await res.json().catch(()=>({})); throw new Error(e.message||'HTTP '+res.status); }
+  return res.json();
+}
 
-  // ── Upload ───────────────────────────────────────────────────────────────────
-  async function handleFiles(files) {
-    if (!files.length) return;
-    if (!cfg().token) { toast('Set your GitHub token first.', 'error'); return; }
-    const wrap = document.getElementById('upload-progress');
-    wrap.style.display = 'flex'; wrap.innerHTML = '';
+async function listMedia() {
+  const c=cfg();
+  try {
+    const d = await ghAPI('GET', `/repos/${c.owner}/${c.repo}/contents/${c.path}`);
+    return Array.isArray(d) ? d : [];
+  } catch(e) { if(e.message.includes('404')) return []; throw e; }
+}
 
-    const items = Array.from(files).map(f => {
-      const mb = f.size / 1024 / 1024;
-      const el = document.createElement('div');
-      el.className = 'prog-item';
-      el.innerHTML = `<span class="fname">${f.name}</span>
-        <div class="prog-bar-wrap"><div class="prog-bar" style="width:0"></div></div>
-        <span class="st">${mb > 25 ? '<span class="err">Too large (&gt;25MB)</span>' : '…'}</span>`;
-      wrap.appendChild(el);
-      return { f, el, mb };
-    });
+async function uploadMedia(name, b64) {
+  const c=cfg();
+  let sha;
+  try { sha=(await ghAPI('GET', `/repos/${c.owner}/${c.repo}/contents/${c.path}/${encodeURIComponent(name)}`)).sha; } catch(_){}
+  return ghAPI('PUT', `/repos/${c.owner}/${c.repo}/contents/${c.path}/${encodeURIComponent(name)}`, {
+    message:'Upload '+name, content:b64, branch:c.branch, ...(sha?{sha}:{})
+  });
+}
 
-    for (const { f, el, mb } of items) {
-      if (mb > 25) continue;
-      const bar = el.querySelector('.prog-bar'), st = el.querySelector('.st');
-      try {
-        bar.style.width = '30%';
-        const b64 = await fileToBase64(f);
-        bar.style.width = '70%';
-        await uploadMedia(f.name, b64);
-        bar.style.width = '100%';
-        st.innerHTML = '<span class="ok">✓ Done</span>';
-      } catch (e) {
-        bar.style.background = 'var(--red)';
-        st.innerHTML = `<span class="err">✕ ${e.message.slice(0, 28)}</span>`;
-      }
-    }
-    toast('Upload complete!', 'success');
-    setTimeout(() => { wrap.style.display = 'none'; }, 3000);
+async function deleteMedia(name, sha) {
+  const c=cfg();
+  return ghAPI('DELETE', `/repos/${c.owner}/${c.repo}/contents/${c.path}/${encodeURIComponent(name)}`, {
+    message:'Delete '+name, sha, branch:c.branch
+  });
+}
+
+function fileToB64(file) {
+  return new Promise((res,rej) => {
+    const r=new FileReader();
+    r.onload=()=>res(r.result.split(',')[1]);
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+let allFiles=[], activeFilter='all', lbIdx=0, selectMode=false, selectedSet=new Set();
+
+// ── Load Gallery ─────────────────────────────────────────────────────────────
+async function loadGallery() {
+  showSkeleton(12);
+  try {
+    allFiles = await listMedia();
+    renderGrid(filtered());
+  } catch(e) {
+    hideSkeleton();
+    if(e.message==='no_token') return;
+    toast('Failed to load: '+e.message);
+  }
+}
+
+function filtered() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  return allFiles.filter(f => {
+    if(!isImg(f.name)&&!isVid(f.name)) return false;
+    if(activeFilter==='image'&&!isImg(f.name)) return false;
+    if(activeFilter==='video'&&!isVid(f.name)) return false;
+    if(q&&!f.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function renderGrid(files) {
+  hideSkeleton();
+  const grid = document.getElementById('photo-grid');
+  const empty = document.getElementById('empty-state');
+  const count = document.getElementById('media-count');
+  grid.innerHTML = '';
+  count.textContent = files.length + ' item' + (files.length!==1?'s':'');
+  if(!files.length) { empty.style.display='block'; return; }
+  empty.style.display='none';
+  files.forEach((file, i) => {
+    const item = createThumb(file, i);
+    item.style.animationDelay = Math.min(i*0.02, 0.3)+'s';
+    grid.appendChild(item);
+  });
+}
+
+function createThumb(file, i) {
+  const item = document.createElement('div');
+  item.className = 'photo-item';
+  item.dataset.idx = i;
+  const url = rawUrl(file.name);
+  if(isImg(file.name)) {
+    const img = document.createElement('img');
+    img.className='loading'; img.loading='lazy'; img.alt=file.name;
+    img.onload=()=>{ img.classList.remove('loading'); img.classList.add('loaded'); };
+    img.onerror=()=>{ img.style.opacity='0.2'; };
+    img.src=url;
+    item.appendChild(img);
+  } else {
+    const vid = document.createElement('video');
+    vid.src=url; vid.preload='metadata'; vid.muted=true; vid.playsInline=true;
+    item.appendChild(vid);
+    const badge=document.createElement('div'); badge.className='vid-badge';
+    badge.innerHTML=`<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Video`;
+    item.appendChild(badge);
+  }
+  // Selection ring
+  const ring=document.createElement('div'); ring.className='check-ring';
+  ring.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  item.appendChild(ring);
+
+  item.addEventListener('click', () => {
+    if(selectMode) { toggleSelect(item, file); return; }
+    openLB(i, filtered());
+  });
+  return item;
+}
+
+function showSkeleton(n) {
+  const loader = document.getElementById('grid-loader');
+  const grid = document.getElementById('photo-grid');
+  grid.style.display='none'; loader.style.display='grid'; loader.innerHTML='';
+  document.getElementById('empty-state').style.display='none';
+  for(let i=0;i<n;i++) {
+    const d=document.createElement('div');
+    d.style.cssText='aspect-ratio:1;'; d.className='shimmer'; loader.appendChild(d);
+  }
+}
+function hideSkeleton() {
+  document.getElementById('grid-loader').style.display='none';
+  document.getElementById('photo-grid').style.display='grid';
+}
+
+// ── Select Mode ───────────────────────────────────────────────────────────────
+function toggleSelect(item, file) {
+  if(selectedSet.has(file.name)) { selectedSet.delete(file.name); item.classList.remove('selected'); }
+  else { selectedSet.add(file.name); item.classList.add('selected'); }
+  updateSelectHeader();
+}
+function updateSelectHeader() {
+  const n=selectedSet.size;
+  document.getElementById('hdr-title').textContent = n>0 ? `${n} Selected` : 'Select';
+}
+function enterSelectMode() {
+  selectMode=true; selectedSet.clear();
+  document.body.classList.add('select-mode');
+  document.getElementById('select-btn').textContent='Done';
+  document.getElementById('select-btn').classList.add('active');
+  document.getElementById('hdr-title').textContent='Select';
+}
+function exitSelectMode() {
+  selectMode=false; selectedSet.clear();
+  document.body.classList.remove('select-mode');
+  document.querySelectorAll('.photo-item.selected').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('select-btn').textContent='Select';
+  document.getElementById('select-btn').classList.remove('active');
+  document.getElementById('hdr-title').textContent='Library';
+}
+
+document.getElementById('select-btn').addEventListener('click', () => {
+  if(selectMode) exitSelectMode(); else enterSelectMode();
+});
+
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+let lbFiles=[];
+function openLB(idx, files) {
+  lbFiles=files; lbIdx=idx;
+  const lb=document.getElementById('lightbox');
+  lb.style.display='flex';
+  requestAnimationFrame(()=>{ lb.classList.add('open'); setTimeout(()=>lb.classList.add('visible'),10); });
+  showLBItem();
+  document.body.style.overflow='hidden';
+}
+function showLBItem() {
+  const file=lbFiles[lbIdx];
+  if(!file) return;
+  const url=rawUrl(file.name);
+  const img=document.getElementById('lb-img'), vid=document.getElementById('lb-vid');
+  if(isImg(file.name)) {
+    vid.style.display='none'; vid.src=''; vid.pause&&vid.pause();
+    img.style.display='block'; img.src=url;
+  } else {
+    img.style.display='none'; img.src='';
+    vid.style.display='block'; vid.src=url; vid.load();
+  }
+  document.getElementById('lb-filename').textContent=file.name;
+  document.getElementById('lb-counter').textContent=`${lbIdx+1} of ${lbFiles.length}`;
+  document.getElementById('lb-prev').disabled=lbIdx===0;
+  document.getElementById('lb-next').disabled=lbIdx===lbFiles.length-1;
+}
+function closeLB() {
+  const lb=document.getElementById('lightbox');
+  lb.classList.remove('visible');
+  setTimeout(()=>{ lb.classList.remove('open'); lb.style.display='none'; }, 250);
+  const vid=document.getElementById('lb-vid');
+  vid.pause&&vid.pause(); vid.src='';
+  document.getElementById('lb-img').src='';
+  document.body.style.overflow='';
+}
+document.getElementById('lb-close').addEventListener('click', closeLB);
+document.getElementById('lb-prev').addEventListener('click', ()=>{ if(lbIdx>0){lbIdx--;showLBItem();} });
+document.getElementById('lb-next').addEventListener('click', ()=>{ if(lbIdx<lbFiles.length-1){lbIdx++;showLBItem();} });
+document.getElementById('lb-delete').addEventListener('click', async ()=>{
+  const file=lbFiles[lbIdx];
+  if(!file) return;
+  if(!confirm(`Delete "${file.name}"?`)) return;
+  try {
+    await deleteMedia(file.name, file.sha);
+    toast('Deleted');
+    closeLB();
     loadGallery();
+  } catch(e) { toast('Delete failed: '+e.message); }
+});
+document.addEventListener('keydown', e => {
+  if(!document.getElementById('lightbox').classList.contains('open')) return;
+  if(e.key==='Escape') closeLB();
+  if(e.key==='ArrowLeft'&&lbIdx>0){lbIdx--;showLBItem();}
+  if(e.key==='ArrowRight'&&lbIdx<lbFiles.length-1){lbIdx++;showLBItem();}
+});
+// Touch swipe in lightbox
+let lbTouchX=null;
+document.getElementById('lightbox').addEventListener('touchstart', e=>{ lbTouchX=e.touches[0].clientX; }, {passive:true});
+document.getElementById('lightbox').addEventListener('touchend', e=>{
+  if(lbTouchX===null) return;
+  const dx=e.changedTouches[0].clientX-lbTouchX; lbTouchX=null;
+  if(Math.abs(dx)<40) return;
+  if(dx<0&&lbIdx<lbFiles.length-1){lbIdx++;showLBItem();}
+  else if(dx>0&&lbIdx>0){lbIdx--;showLBItem();}
+});
+
+// ── Upload ────────────────────────────────────────────────────────────────────
+function openUploadSheet() {
+  document.getElementById('upload-sheet').classList.add('open');
+  document.getElementById('sheet-backdrop').classList.add('show');
+  document.getElementById('upload-list').innerHTML='';
+}
+function closeUploadSheet() {
+  document.getElementById('upload-sheet').classList.remove('open');
+  document.getElementById('sheet-backdrop').classList.remove('show');
+}
+document.getElementById('nav-upload-btn').addEventListener('click', openUploadSheet);
+document.getElementById('sheet-close-btn').addEventListener('click', closeUploadSheet);
+document.getElementById('sheet-backdrop').addEventListener('click', closeUploadSheet);
+
+const dropArea=document.getElementById('drop-area');
+const fileInput=document.getElementById('file-input');
+dropArea.addEventListener('click', ()=>fileInput.click());
+fileInput.addEventListener('change', e=>{ if(e.target.files.length) handleUpload(e.target.files); fileInput.value=''; });
+dropArea.addEventListener('dragover', e=>{ e.preventDefault(); dropArea.classList.add('drag-over'); });
+dropArea.addEventListener('dragleave', ()=>dropArea.classList.remove('drag-over'));
+dropArea.addEventListener('drop', e=>{ e.preventDefault(); dropArea.classList.remove('drag-over'); handleUpload(e.dataTransfer.files); });
+
+async function handleUpload(files) {
+  if(!cfg().token) { toast('Set your GitHub token in Account first.'); return; }
+  const list=document.getElementById('upload-list');
+  list.innerHTML='';
+  const banner=document.getElementById('upload-banner');
+  const bannerBar=document.getElementById('upload-banner-bar');
+  const bannerCount=document.getElementById('upload-banner-count');
+  banner.classList.add('show');
+
+  const items = Array.from(files).map(f => {
+    const mb=f.size/1024/1024;
+    const row=document.createElement('div'); row.className='upload-row';
+    row.innerHTML=`
+      <div class="upload-info">
+        <div class="upload-fname">${f.name}</div>
+        <div class="upload-size">${fmtSize(f.size)}</div>
+        <div class="upload-bar-wrap"><div class="upload-bar" style="width:0%"></div></div>
+      </div>
+      <span class="upload-status">${mb>25?'<span class="err">Too large</span>':'…'}</span>`;
+    list.appendChild(row);
+    return {f, row, mb};
+  });
+
+  let done=0, total=items.filter(i=>i.mb<=25).length;
+  for(const {f, row, mb} of items) {
+    if(mb>25) continue;
+    const bar=row.querySelector('.upload-bar'), st=row.querySelector('.upload-status');
+    try {
+      bar.style.width='25%';
+      const b64=await fileToB64(f);
+      bar.style.width='65%';
+      await uploadMedia(f.name, b64);
+      bar.style.width='100%'; bar.style.background='var(--green)';
+      st.innerHTML='<span class="ok">✓</span>';
+    } catch(e) {
+      bar.style.background='var(--red)';
+      st.innerHTML=`<span class="err">✕</span>`;
+    }
+    done++;
+    bannerBar.style.width=(done/total*100)+'%';
+    bannerCount.textContent=`${done}/${total}`;
+    bannerBar.textContent='';
   }
 
-  const dropZone = document.getElementById('drop-zone');
-  const fileInput = document.getElementById('file-input');
-  dropZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', e => { handleFiles(e.target.files); fileInput.value = ''; });
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+  document.getElementById('upload-banner-label').textContent='Upload complete';
+  toast('Import complete');
+  setTimeout(()=>{ banner.classList.remove('show'); bannerBar.style.width='0%'; }, 2500);
+  loadGallery();
+}
 
-  // ── Token Banner ─────────────────────────────────────────────────────────────
-  function syncBanner() { document.getElementById('token-banner').classList.toggle('show', !cfg().token); }
-  document.getElementById('save-token-btn').addEventListener('click', () => {
-    const v = document.getElementById('token-input').value.trim();
-    if (!v) { toast('Enter a token.', 'error'); return; }
-    localStorage.setItem('gh_token', v);
-    syncBanner(); toast('Token saved!', 'success'); loadGallery();
+// ── Navigation ────────────────────────────────────────────────────────────────
+const views={ library:'view-library', search:'view-search', settings:'view-settings' };
+const headerTitles={ library:'Library', search:'Search', settings:'Account' };
+
+function switchView(name) {
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`.nav-item[data-view="${name}"]`)?.classList.add('active');
+  Object.values(views).forEach(id=>document.getElementById(id).classList.remove('active'));
+  document.getElementById(views[name]).classList.add('active');
+  document.getElementById('hdr-title').textContent=headerTitles[name]||'';
+  // Show/hide header elements per view
+  const isLib=name==='library';
+  document.getElementById('select-btn').style.display=isLib?'':'none';
+  document.getElementById('refresh-btn').style.display=isLib?'':'none';
+  document.getElementById('search-bar-wrap').style.display=name==='search'?'none':'';
+  if(name==='settings') loadSettingsForm();
+  if(name==='search') applySearch();
+}
+
+document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
+  btn.addEventListener('click', ()=> switchView(btn.dataset.view));
+});
+
+// ── Search ────────────────────────────────────────────────────────────────────
+document.getElementById('search-input').addEventListener('input', applySearch);
+function applySearch() {
+  const q=document.getElementById('search-input').value.toLowerCase();
+  if(!q) { document.getElementById('search-results').innerHTML=''; document.getElementById('search-empty').style.display='none'; return; }
+  const res=allFiles.filter(f=>(isImg(f.name)||isVid(f.name))&&f.name.toLowerCase().includes(q));
+  const grid=document.getElementById('search-results'), empty=document.getElementById('search-empty');
+  grid.innerHTML='';
+  if(!res.length) { empty.style.display='block'; return; }
+  empty.style.display='none';
+  res.forEach((file,i)=>{ const item=createThumb(file,i); item.addEventListener('click',()=>openLB(i,res)); grid.appendChild(item); });
+}
+
+// Filter pills
+document.querySelectorAll('#filter-wrap .pill').forEach(p=>{
+  p.addEventListener('click', ()=>{
+    document.querySelectorAll('#filter-wrap .pill').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active'); activeFilter=p.dataset.filter; renderGrid(filtered());
   });
-  document.getElementById('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('save-token-btn').click(); });
+});
 
-  // ── Settings Modal ────────────────────────────────────────────────────────────
-  document.getElementById('settings-btn').addEventListener('click', () => {
-    const c = cfg();
-    document.getElementById('s-token').value = c.token;
-    document.getElementById('s-owner').value = c.owner;
-    document.getElementById('s-repo').value = c.repo;
-    document.getElementById('s-branch').value = c.branch;
-    document.getElementById('s-path').value = c.path;
-    document.getElementById('settings-modal').classList.add('open');
-  });
-  document.getElementById('s-cancel').addEventListener('click', () => document.getElementById('settings-modal').classList.remove('open'));
-  document.getElementById('s-save').addEventListener('click', () => {
-    saveCfg({ token: document.getElementById('s-token').value.trim(), owner: document.getElementById('s-owner').value.trim(), repo: document.getElementById('s-repo').value.trim(), branch: document.getElementById('s-branch').value.trim(), path: document.getElementById('s-path').value.trim() });
-    document.getElementById('settings-modal').classList.remove('open');
-    syncBanner(); toast('Settings saved!', 'success'); loadGallery();
-  });
-  document.getElementById('settings-modal').addEventListener('click', e => { if (e.target.id === 'settings-modal') document.getElementById('settings-modal').classList.remove('open'); });
+// ── Settings Form ─────────────────────────────────────────────────────────────
+function loadSettingsForm() {
+  const c=cfg();
+  document.getElementById('s-token').value=c.token;
+  document.getElementById('s-owner').value=c.owner;
+  document.getElementById('s-repo').value=c.repo;
+  document.getElementById('s-branch').value=c.branch;
+  document.getElementById('s-path').value=c.path;
+}
+document.getElementById('s-save').addEventListener('click', ()=>{
+  saveCfg({ token:document.getElementById('s-token').value.trim(), owner:document.getElementById('s-owner').value.trim(), repo:document.getElementById('s-repo').value.trim(), branch:document.getElementById('s-branch').value.trim(), path:document.getElementById('s-path').value.trim() });
+  toast('Settings saved');
+  loadGallery();
+});
+document.getElementById('s-signout').addEventListener('click', ()=>{
+  if(!confirm('Sign out? Your token will be removed.')) return;
+  ['gh_token','gh_owner','gh_repo','gh_branch','gh_path'].forEach(k=>localStorage.removeItem(k));
+  location.reload();
+});
 
-  // ── Filters & Search ──────────────────────────────────────────────────────────
-  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-    t.classList.add('active'); activeFilter = t.dataset.filter; applyFilter();
-  }));
-  document.getElementById('search-box').addEventListener('input', applyFilter);
-  document.getElementById('refresh-btn').addEventListener('click', loadGallery);
+// ── Refresh ───────────────────────────────────────────────────────────────────
+document.getElementById('refresh-btn').addEventListener('click', ()=>{ loadGallery(); toast('Refreshed'); });
 
-  // ── Init ──────────────────────────────────────────────────────────────────────
-  syncBanner();
-  if (cfg().token) loadGallery();
+// ── Onboarding ────────────────────────────────────────────────────────────────
+document.getElementById('onb-start').addEventListener('click', ()=>{
+  const v=document.getElementById('onb-token').value.trim();
+  if(!v) { toast('Paste your GitHub token first'); return; }
+  localStorage.setItem('gh_token', v);
+  initApp();
+});
+document.getElementById('onb-token').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('onb-start').click(); });
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function initApp() {
+  document.getElementById('screen-onboarding').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+  switchView('library');
+  loadGallery();
+}
+
+if(cfg().token) { initApp(); }
+else { document.getElementById('screen-onboarding').classList.add('active'); }
 </script>
 </body>
 </html>
