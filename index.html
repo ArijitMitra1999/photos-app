@@ -6,6 +6,18 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <title>Photos</title>
+  <!-- Content Security Policy: only allow resources from GitHub and self -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' https://raw.githubusercontent.com data: blob:;
+    media-src 'self' https://raw.githubusercontent.com blob:;
+    connect-src 'self' https://api.github.com https://raw.githubusercontent.com;
+    font-src 'self';
+    frame-src 'none';
+    object-src 'none';
+  "/>
   <style>
     /* ── Reset & Base ─────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -809,6 +821,11 @@ function cfg() {
 function saveCfg(c) { ['owner','repo','branch','path','token'].forEach(k => localStorage.setItem('gh_'+k, c[k])); }
 function ls(k) { return localStorage.getItem(k) || ''; }
 
+// ── Sanitize (prevent XSS from API-returned filenames) ───────────────────────
+function esc(str) {
+  const d=document.createElement('div'); d.textContent=str; return d.innerHTML;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const IMG_EXT = ['jpg','jpeg','png','gif','webp','bmp','svg','avif','heic'];
 const VID_EXT = ['mp4','webm','ogg','mov','avi','mkv','m4v'];
@@ -1093,13 +1110,22 @@ async function handleUpload(files) {
   const items = Array.from(files).map(f => {
     const mb=f.size/1024/1024;
     const row=document.createElement('div'); row.className='upload-row';
-    row.innerHTML=`
-      <div class="upload-info">
-        <div class="upload-fname">${f.name}</div>
-        <div class="upload-size">${fmtSize(f.size)}</div>
-        <div class="upload-bar-wrap"><div class="upload-bar" style="width:0%"></div></div>
-      </div>
-      <span class="upload-status">${mb>25?'<span class="err">Too large</span>':'…'}</span>`;
+
+    // Build DOM safely — never inject f.name via innerHTML (XSS prevention)
+    const info=document.createElement('div'); info.className='upload-info';
+    const fname=document.createElement('div'); fname.className='upload-fname';
+    fname.textContent=f.name;                          // safe: textContent, not innerHTML
+    const fsize=document.createElement('div'); fsize.className='upload-size';
+    fsize.textContent=fmtSize(f.size);
+    const barWrap=document.createElement('div'); barWrap.className='upload-bar-wrap';
+    const bar=document.createElement('div'); bar.className='upload-bar'; bar.style.width='0%';
+    barWrap.appendChild(bar); info.appendChild(fname); info.appendChild(fsize); info.appendChild(barWrap);
+
+    const st=document.createElement('span'); st.className='upload-status';
+    if(mb>25){ const e=document.createElement('span'); e.className='err'; e.textContent='Too large'; st.appendChild(e); }
+    else st.textContent='…';
+
+    row.appendChild(info); row.appendChild(st);
     list.appendChild(row);
     return {f, row, mb};
   });
